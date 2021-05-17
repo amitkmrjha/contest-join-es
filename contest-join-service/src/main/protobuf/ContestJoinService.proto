@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "contest.join.proto";
+
+package contestjoin;
+
+// gRPC definition for ContestJoinService
+
+
+
+service ContestJoinService {
+    rpc JoinContest(ContestJoinRequests) returns (Joins) {}
+    rpc GetCart (GetJoinRequest) returns (Joins) {}
+}
+
+message ContestJoinRequests {
+    repeated ContestJoinRequest contestJoinRequest = 1;
+}
+
+message ContestJoinRequest {
+    string contestId = 1;
+    string userId = 2;
+    string joinMetaData = 3;
+}
+
+message GetJoinRequest {
+    string contestId = 1;
+}
+
+message Joins {
+    repeated JoinRecord joinRecords = 1;
+}
+
+
+message JoinRecord {
+    string contestId = 1;
+    string userId = 2;
+    string positionId = 3;
+}
