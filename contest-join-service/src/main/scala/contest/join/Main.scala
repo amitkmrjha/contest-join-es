@@ -30,6 +30,9 @@ object Main {
     AkkaManagement(system).start()
     ClusterBootstrap(system).start()
 
+    ContestJoin.init(system,20)
+
+
     val grpcInterface =
       system.settings.config.getString("contest-join-service.grpc.interface")
     val grpcPort =

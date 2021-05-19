@@ -32,8 +32,8 @@ object ContestJoin {
     def toSummary: Summary = Summary(maxSeat, occupiedSeatCount)
   }
   object State {
-    val empty =
-      State(maxSeat = 5000, occupiedSeatCount = 0)
+    def emptyInit(contestSize: Int) =
+      State(contestSize, occupiedSeatCount = 0)
   }
 
 
@@ -75,29 +75,25 @@ object ContestJoin {
   val tags = Vector.tabulate(5)(i => s"contest-join-$i")
 
 
-  def init(system: ActorSystem[_]): Unit = {
-    val behaviorFactory: EntityContext[Command] => Behavior[Command] = {
-      entityContext =>
-        val i = math.abs(entityContext.entityId.hashCode % tags.size)
-        val selectedTag = tags(i)
-        ContestJoin(entityContext.entityId, selectedTag)
-    }
-    ClusterSharding(system).init(Entity(EntityKey)(behaviorFactory))
+  def init(system: ActorSystem[_],contestSize: Int): Unit = {
+    ClusterSharding(system).init(Entity(EntityKey) { entityContext =>
+      ContestJoin(entityContext.entityId,contestSize)
+    })
   }
 
-  def apply(contestId: String, projectionTag: String): Behavior[Command] = {
+  def apply(contestId: String,contestSize: Int): Behavior[Command] = {
     EventSourcedBehavior
       .withEnforcedReplies[Command, Event, State](
         persistenceId = PersistenceId(EntityKey.name, contestId),
-        emptyState = State.empty,
+        emptyState = State.emptyInit(contestSize),
         commandHandler =
           (state, command) => handleCommand(contestId, state, command),
         eventHandler = (state, event) => handleEvent(state, event))
-      .withTagger(_ => Set(projectionTag))
       .withRetention(RetentionCriteria
         .snapshotEvery(numberOfEvents = 100, keepNSnapshots = 3))
       .onPersistFailure(
-        SupervisorStrategy.restartWithBackoff(200.millis, 5.seconds, 0.1))
+        SupervisorStrategy.restartWithBackoff(200.millis, 5.seconds, 0.1)
+      )
   }
 
 
@@ -122,16 +118,21 @@ object ContestJoin {
           Effect.reply(replyTo)(
             StatusReply.Error(s"Contest '$contestId' do not have sufficient seat to  fill ${contestJoinInfo.size} seat. " +
               s"Currently only $vacantSeat seat left to occupy."))
-        else
+        else {
+          val joinConfirmationInfo : Seq[JoinConfirmationInfo] =
+            contestJoinInfo.foldLeft(Seq.empty[JoinConfirmationInfo]) { (acc, e) =>
+              acc :+ JoinConfirmationInfo(contestId,e.userId,e.joinMetaData,state.occupiedSeatCount+acc.size+1)
+            }
           Effect
             .persist(
               UsersAddedToContest(
-                contestId,
-                contestJoinInfo.map(e => JoinConfirmationInfo(contestId,e.userId,e.joinMetaData,state.occupiedSeatCount))
+                contestId,joinConfirmationInfo
               )
             ).thenReply(replyTo) { updatedCart =>
               StatusReply.Success(updatedCart.toSummary)
             }
+        }
+
       case Get(replyTo) =>
         Effect.reply(replyTo)(state.toSummary)
     }
