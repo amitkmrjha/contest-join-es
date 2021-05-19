@@ -54,6 +54,11 @@
     
     # get item popularity
     grpcurl -d '{"itemId":"socks"}' -plaintext 127.0.0.1:8101 shoppingcart.ShoppingCartService.GetItemPopularity
+   
+   grpcurl -d '{"contestJoinRequest":{"contestId":"MegaContest123", "userId":"amit1", "joinMetaData":"kohlidecider"}}' -plaintext 127.0.0.1:8101 contestjoin.ContestJoinService.JoinContest
+
+   grpcurl -d '{"contestJoinRequest":{"contestId":"MegaContest123", "userId":"amit1", "joinMetaData":"kohlidecider"},"contestJoinRequest":{"contestId":"MegaContest123", "userId":"amit2", "joinMetaData":"kohlidecider1"}}' -plaintext 127.0.0.1:8101 contestjoin.ContestJoinService.JoinContest
+
     ```
 
     or same `grpcurl` commands to port 8102 to reach node 2.

@@ -17,7 +17,7 @@ class ContestJoinServiceImpl extends proto.ContestJoinService {
 
 
     val joinRecords: Seq[JoinRecord] = in.contestJoinRequest.map{ e =>
-      proto.JoinRecord(e.contestId,e.contestId,Random.nextInt(4).toString)
+      proto.JoinRecord(e.contestId,e.contestId,Random.nextInt(40000).toString)
     }
     Future.successful(
       proto.Joins(joinRecords = joinRecords)
