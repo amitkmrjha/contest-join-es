@@ -11,7 +11,7 @@ package contestjoin;
 
 service ContestJoinService {
     rpc JoinContest(ContestJoinRequests) returns (Joins) {}
-    rpc GetCart (GetJoinRequest) returns (Joins) {}
+    rpc GetContestJoin (GetJoinRequest) returns (JoinState) {}
 }
 
 message ContestJoinRequests {
@@ -36,5 +36,10 @@ message Joins {
 message JoinRecord {
     string contestId = 1;
     string userId = 2;
-    string positionId = 3;
+    string status = 3;
+}
+message JoinState {
+    string contestId = 1;
+    int32 maxSeat = 2;
+    int32 occupiedSeatCount = 3;
 }

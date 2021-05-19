@@ -37,7 +37,7 @@ object Main {
       system.settings.config.getString("contest-join-service.grpc.interface")
     val grpcPort =
       system.settings.config.getInt("contest-join-service.grpc.port")
-    val grpcService = new ContestJoinServiceImpl
+    val grpcService = new ContestJoinServiceImpl(system)
     ContestJoinServer.start(
       grpcInterface,
       grpcPort,
