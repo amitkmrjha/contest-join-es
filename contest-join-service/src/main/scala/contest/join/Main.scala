@@ -5,7 +5,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.grpc.GrpcClientSettings
 import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.management.scaladsl.AkkaManagement
-import contest.join.repository.ScalikeJdbcSetup
+import contest.join.repository.{ContestJoinRepositoryImpl, ScalikeJdbcSetup}
 import org.slf4j.LoggerFactory
 
 import scala.util.control.NonFatal
@@ -32,12 +32,16 @@ object Main {
 
     ContestJoin.init(system,20)
 
+    ScalikeJdbcSetup.init(system)
+    val contestJoinRepository = new ContestJoinRepositoryImpl()
+    ContestJoinProjection.init(system, contestJoinRepository)
+
 
     val grpcInterface =
       system.settings.config.getString("contest-join-service.grpc.interface")
     val grpcPort =
       system.settings.config.getInt("contest-join-service.grpc.port")
-    val grpcService = new ContestJoinServiceImpl(system)
+    val grpcService = new ContestJoinServiceImpl(system,contestJoinRepository)
     ContestJoinServer.start(
       grpcInterface,
       grpcPort,

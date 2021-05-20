@@ -1,21 +1,12 @@
 package contest.join
 
-import java.time.Instant
-import scala.concurrent.duration._
-import akka.actor.typed.ActorRef
-import akka.actor.typed.ActorSystem
-import akka.actor.typed.Behavior
-import akka.actor.typed.SupervisorStrategy
-import akka.cluster.sharding.typed.scaladsl.ClusterSharding
-import akka.cluster.sharding.typed.scaladsl.Entity
-import akka.cluster.sharding.typed.scaladsl.EntityContext
-import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
+import akka.actor.typed.{ActorRef, ActorSystem, Behavior, SupervisorStrategy}
+import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity, EntityTypeKey}
 import akka.pattern.StatusReply
 import akka.persistence.typed.PersistenceId
-import akka.persistence.typed.scaladsl.Effect
-import akka.persistence.typed.scaladsl.EventSourcedBehavior
-import akka.persistence.typed.scaladsl.ReplyEffect
-import akka.persistence.typed.scaladsl.RetentionCriteria
+import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, ReplyEffect, RetentionCriteria}
+
+import scala.concurrent.duration._
 
 object ContestJoin {
 
@@ -74,14 +65,15 @@ object ContestJoin {
 
   val tags = Vector.tabulate(5)(i => s"contest-join-$i")
 
-
   def init(system: ActorSystem[_],contestSize: Int): Unit = {
     ClusterSharding(system).init(Entity(EntityKey) { entityContext =>
-      ContestJoin(entityContext.entityId,contestSize)
+      val i = math.abs(entityContext.entityId.hashCode % tags.size)
+      val selectedTag = tags(i)
+      ContestJoin(entityContext.entityId,contestSize,selectedTag)
     })
   }
 
-  def apply(contestId: String,contestSize: Int): Behavior[Command] = {
+  def apply(contestId: String,contestSize: Int,projectionTag: String): Behavior[Command] = {
     EventSourcedBehavior
       .withEnforcedReplies[Command, Event, State](
         persistenceId = PersistenceId(EntityKey.name, contestId),
@@ -89,6 +81,7 @@ object ContestJoin {
         commandHandler =
           (state, command) => handleCommand(contestId, state, command),
         eventHandler = (state, event) => handleEvent(state, event))
+      .withTagger(_ => Set(projectionTag))
       .withRetention(RetentionCriteria
         .snapshotEvery(numberOfEvents = 100, keepNSnapshots = 3))
       .onPersistFailure(

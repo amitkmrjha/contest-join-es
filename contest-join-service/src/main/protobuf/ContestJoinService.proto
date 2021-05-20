@@ -12,6 +12,11 @@ package contestjoin;
 service ContestJoinService {
     rpc JoinContest(ContestJoinRequests) returns (Joins) {}
     rpc GetContestJoin (GetJoinRequest) returns (JoinState) {}
+
+    rpc GetJoinByContest(JoinByContestRequest) returns (ContestUserResponse) {}
+    rpc GetJoinByUser(JoinByUserRequest) returns (ContestUserResponse) {}
+    rpc GetAllJoin(EmptyParameter) returns (ContestUserResponse) {}
+
 }
 
 message ContestJoinRequests {
@@ -43,3 +48,24 @@ message JoinState {
     int32 maxSeat = 2;
     int32 occupiedSeatCount = 3;
 }
+
+message JoinByContestRequest {
+    string contestId = 1;
+}
+
+message JoinByUserRequest {
+    string userId = 1;
+}
+
+message ContestUserResponse {
+    repeated ContestUserInfo contestUserInfo = 1;
+}
+
+message ContestUserInfo {
+    string contestId = 1;
+    string userId = 2;
+    string joinMetaData = 3;
+    int32 positionId = 4;
+}
+
+message EmptyParameter {}

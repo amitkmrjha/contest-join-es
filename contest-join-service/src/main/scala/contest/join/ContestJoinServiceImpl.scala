@@ -1,23 +1,18 @@
 package contest.join
 
-import contest.join.proto.{ContestJoinRequest, ContestJoinRequests, GetJoinRequest, JoinRecord, JoinState, Joins}
-
-import scala.concurrent.Future
-import org.slf4j.LoggerFactory
-import akka.actor.typed.ActorSystem
-
-import java.util.concurrent.TimeoutException
-import scala.concurrent.Future
-import akka.actor.typed.ActorSystem
+import akka.actor.typed.{ActorSystem, DispatcherSelector}
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.grpc.GrpcServiceException
 import akka.util.Timeout
+import contest.join.proto._
+import contest.join.repository.{ContestJoinRepository, ScalikeJdbcSession}
 import io.grpc.Status
+import org.slf4j.LoggerFactory
 
-import scala.collection.immutable
-import scala.util.Random
+import java.util.concurrent.TimeoutException
+import scala.concurrent.{ExecutionContext, Future}
 
-class ContestJoinServiceImpl(system: ActorSystem[_]) extends proto.ContestJoinService {
+class ContestJoinServiceImpl(system: ActorSystem[_],contestJoinRepository: ContestJoinRepository) extends proto.ContestJoinService {
 
   import system.executionContext
 
@@ -28,6 +23,12 @@ class ContestJoinServiceImpl(system: ActorSystem[_]) extends proto.ContestJoinSe
       system.settings.config.getDuration("shopping-cart-service.ask-timeout"))
 
   private val sharding = ClusterSharding(system)
+
+  private val blockingJdbcExecutor: ExecutionContext =
+    system.dispatchers.lookup(
+      DispatcherSelector
+        .fromConfig("akka.projection.jdbc.blocking-jdbc-dispatcher")
+    )
 
   override def joinContest(in: ContestJoinRequests): Future[Joins] = {
 
@@ -81,4 +82,45 @@ class ContestJoinServiceImpl(system: ActorSystem[_]) extends proto.ContestJoinSe
       }
     convertError(response)
   }
+
+  override def getJoinByContest(in: proto.JoinByContestRequest): Future[proto.ContestUserResponse] = {
+    Future {
+      ScalikeJdbcSession.withSession { session =>
+        contestJoinRepository.getContestJoin(session, in.contestId)
+      }
+    }(blockingJdbcExecutor).map { response =>
+      val userinfo: Seq[ContestUserInfo] = response.map { info =>
+          proto.ContestUserInfo(info.contestId,info.userId,info.joinMetaData,info.positionId)
+      }
+      proto.ContestUserResponse(userinfo)
+    }
+  }
+
+  override def getJoinByUser(in: proto.JoinByUserRequest): Future[proto.ContestUserResponse] = {
+    Future {
+      ScalikeJdbcSession.withSession { session =>
+        contestJoinRepository.getUserJoin(session, in.userId)
+      }
+    }(blockingJdbcExecutor).map { response =>
+      val userinfo: Seq[ContestUserInfo] = response.map { info =>
+        proto.ContestUserInfo(info.contestId,info.userId,info.joinMetaData,info.positionId)
+      }
+      proto.ContestUserResponse(userinfo)
+    }
+  }
+
+  override def getAllJoin(in: EmptyParameter): Future[ContestUserResponse] = {
+    Future {
+      ScalikeJdbcSession.withSession { session =>
+        contestJoinRepository.getAll(session)
+      }
+    }(blockingJdbcExecutor).map { response =>
+      val userinfo: Seq[ContestUserInfo] = response.map { info =>
+        proto.ContestUserInfo(info.contestId,info.userId,info.joinMetaData,info.positionId)
+      }
+      proto.ContestUserResponse(userinfo)
+    }
+  }
+
+
 }

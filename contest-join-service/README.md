@@ -7,10 +7,10 @@
 
     # creates the tables needed for Akka Persistence
     # as well as the offset store table for Akka Projection
-    docker exec -i shopping-cart-service_postgres-db_1 psql -U shopping-cart -t < ddl-scripts/create_tables.sql
+    docker exec -i contest-join-service_postgres-db_1 psql -U contest-join -t < ddl-scripts/create_tables.sql
     
     # creates the user defined projection table.
-    docker exec -i shopping-cart-service_postgres-db_1 psql -U shopping-cart -t < ddl-scripts/create_user_tables.sql
+    docker exec -i contest-join-service_postgres-db_1 psql -U contest-join -t < ddl-scripts/create_user_tables.sql
     ```
 
 2. Start a first node:
@@ -40,30 +40,26 @@
 6. Try it with [grpcurl](https://github.com/fullstorydev/grpcurl):
 
     ```shell
-    # add item to cart
-    grpcurl -d '{"cartId":"cart1", "itemId":"socks", "quantity":3}' -plaintext 127.0.0.1:8101 shoppingcart.ShoppingCartService.AddItem
-    
-    # get cart
-    grpcurl -d '{"cartId":"cart1"}' -plaintext 127.0.0.1:8101 shoppingcart.ShoppingCartService.GetCart
-    
-    # update quantity of item
-    grpcurl -d '{"cartId":"cart1", "itemId":"socks", "quantity":5}' -plaintext 127.0.0.1:8101 shoppingcart.ShoppingCartService.UpdateItem
-    
-    # check out cart
-    grpcurl -d '{"cartId":"cart1"}' -plaintext 127.0.0.1:8101 shoppingcart.ShoppingCartService.Checkout
-    
-    # get item popularity
-    grpcurl -d '{"itemId":"socks"}' -plaintext 127.0.0.1:8101 shoppingcart.ShoppingCartService.GetItemPopularity
-   
-   grpcurl -d '{"contestJoinRequest":{"contestId":"MegaContest123", "userId":"amit1", "joinMetaData":"kohlidecider"}}' -plaintext 127.0.0.1:8101 contestjoin.ContestJoinService.JoinContest
-
+    # add user to contest
    grpcurl -d '{"contestJoinRequest":{"contestId":"MegaContest123", "userId":"amit1", "joinMetaData":"kohlidecider"},"contestJoinRequest":{"contestId":"MegaContest123", "userId":"amit2", "joinMetaData":"kohlidecider1"}}' -plaintext 127.0.0.1:8101 contestjoin.ContestJoinService.JoinContest
-
-   grpcurl -d '{"contestJoinRequest":{"contestId":"MegaContest123", "userId":"amit1", "joinMetaData":"kohlidecider"},"contestJoinRequest":{"contestId":"MegaContest123", "userId":"amit2", "joinMetaData":"kohlidecider1"}}' -plaintext 127.0.0.1:8101 contestjoin.ContestJoinService.JoinContest
-
-   docker exec -i contest-join-service_postgres-db_1 psql -U shopping-cart -t < ddl-scripts/create_tables.sql
    
+   # get contest state by entity id
    grpcurl -d '{"contestId":"MegaContest123"}' -plaintext 127.0.0.1:8101 contestjoin.ContestJoinService.GetContestJoin
+   
+   # Query join by Contest id
+   grpcurl -d '{"userId":"MegaContest123"}' -plaintext 127.0.0.1:8101 contestjoin.ContestJoinService.GetJoinByContest
+   
+   # Query join by User id
+   grpcurl -d '{"userId":"amit1"}' -plaintext 127.0.0.1:8101 contestjoin.ContestJoinService.GetJoinByUser
+   
+   # Query all join
+   grpcurl  -plaintext 127.0.0.1:8101 contestjoin.ContestJoinService.GetAllJoin
     ```
 
     or same `grpcurl` commands to port 8102 to reach node 2.
+
+7. Shut down supporting docker
+
+    ```shell
+    docker-compose down
+    ```
