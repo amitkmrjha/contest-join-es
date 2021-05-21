@@ -47,7 +47,7 @@
    grpcurl -d '{"contestId":"MegaContest123"}' -plaintext 127.0.0.1:8101 contestjoin.ContestJoinService.GetContestJoin
    
    # Query join by Contest id
-   grpcurl -d '{"userId":"MegaContest123"}' -plaintext 127.0.0.1:8101 contestjoin.ContestJoinService.GetJoinByContest
+   grpcurl -d '{"contestId":"MegaContest123"}' -plaintext 127.0.0.1:8101 contestjoin.ContestJoinService.GetJoinByContest
    
    # Query join by User id
    grpcurl -d '{"userId":"amit1"}' -plaintext 127.0.0.1:8101 contestjoin.ContestJoinService.GetJoinByUser

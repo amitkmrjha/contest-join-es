@@ -32,8 +32,6 @@ class ContestJoinServiceImpl(system: ActorSystem[_],contestJoinRepository: Conte
 
   override def joinContest(in: ContestJoinRequests): Future[Joins] = {
 
-    logger.info("join contest {}", in.contestJoinRequest)
-
     val grpcResponse: Seq[Future[Seq[JoinRecord]]] = in.contestJoinRequest.groupBy(_.contestId).map { e =>
       val cId = e._1
       val inputRequestInfo = e._2.map{e =>

@@ -30,7 +30,7 @@ object Main {
     AkkaManagement(system).start()
     ClusterBootstrap(system).start()
 
-    ContestJoin.init(system,20)
+    ContestJoin.init(system,20000000)
 
     ScalikeJdbcSetup.init(system)
     val contestJoinRepository = new ContestJoinRepositoryImpl()

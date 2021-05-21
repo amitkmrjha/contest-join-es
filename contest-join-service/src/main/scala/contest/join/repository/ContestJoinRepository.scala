@@ -3,6 +3,8 @@ package contest.join.repository
 import contest.join.JoinConfirmationInfo
 import scalikejdbc._
 
+import scala.collection.IndexedSeq.iterableFactory
+
 
 trait ContestJoinRepository {
   def update(session: ScalikeJdbcSession, contestId: String, joinConfirmationInfo: Seq[JoinConfirmationInfo]): Unit
@@ -23,13 +25,25 @@ class ContestJoinRepositoryImpl() extends ContestJoinRepository {
       // Alternatively, this can be implemented by first issuing the `UPDATE`
       // and checking for the updated rows count. If no rows got updated issue
       // the `INSERT` instead.
+      val batchValues: Seq[Seq[(String, Any)]] = joinConfirmationInfo.map { info =>
+        Seq(("contest_id" -> info.contestId),
+          ("user_id" -> info.userId),
+          ("join_meta_data" -> info.joinMetaData),
+          ("position_id" -> info.positionId)
+        )
+      }
 
-      joinConfirmationInfo.map{info =>
+      sql"""
+           INSERT INTO contest_join_meta (contest_id, user_id, join_meta_data, position_id)
+           VALUES ( {contest_id}, {user_id}, {join_meta_data}, {position_id} )""".batchByName(batchValues:_*)
+         .apply()
+      //below insert multiple time instead of one go
+      /*joinConfirmationInfo.map{info =>
         sql"""
            INSERT INTO contest_join_meta (contest_id, user_id, join_meta_data, position_id)
            VALUES (${info.contestId}, ${info.userId}, ${info.joinMetaData}, ${info.positionId})
          """.executeUpdate().apply()
-      }
+      }*/
     }
 
   }
