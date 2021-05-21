@@ -20,7 +20,7 @@ class ContestJoinServiceImpl(system: ActorSystem[_],contestJoinRepository: Conte
 
   implicit private val timeout: Timeout =
     Timeout.create(
-      system.settings.config.getDuration("shopping-cart-service.ask-timeout"))
+      system.settings.config.getDuration("contest-join-service.ask-timeout"))
 
   private val sharding = ClusterSharding(system)
 

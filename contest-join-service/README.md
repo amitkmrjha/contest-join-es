@@ -63,3 +63,30 @@
     ```shell
     docker-compose down
     ```
+   
+8. Load Test
+   ```shell
+       ghz -c 5000 -n 100000 --insecure \
+      --proto src/main/protobuf/ContestJoinService.proto \
+      --call contestjoin.ContestJoinService.JoinContest \
+      -d '{"contestJoinRequest":{"contestId":"MegaContest123", "userId":"amit1", "joinMetaData":"kohlidecider"},"contestJoinRequest":{"contestId":"MegaContest123", "userId":"amit2", "joinMetaData":"kohlidecider1"}}' \
+      127.0.0.1:8101
+      
+      ghz -c 5000 -n 100000 --insecure \
+      --proto src/main/protobuf/ContestJoinService.proto \
+      --call contestjoin.ContestJoinService.JoinContest \
+      -D /Users/amitkumar/Downloads/joinrequestdata.json \
+      127.0.0.1:8101
+      
+      ghz -c 50 -n 10000 --insecure \
+      --proto src/main/protobuf/ContestJoinService.proto \
+      --call contestjoin.ContestJoinService.JoinContest \
+      -D /Users/amitkumar/Downloads/joinrequestdata.json \
+      127.0.0.1:8101
+      
+      ghz -c 1 -n 1 --insecure \
+      --proto src/main/protobuf/ContestJoinService.proto \
+      --call contestjoin.ContestJoinService.JoinContest \
+      -D /Users/amitkumar/Downloads/joinrequestdata.json \
+      127.0.0.1:8101
+    ```
